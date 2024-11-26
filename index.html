@@ -1,0 +1,1065 @@
+<html><head><base href="." />
+<meta charset="UTF-8">
+<title>Jogo de Habilidades Sociais</title>
+<style>
+:root {
+  --primary: #4A90E2;
+  --secondary: #67B26F;
+  --text: #2C3E50;
+  --background: #F5F7FA;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--background);
+  color: var(--text);
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-container {
+  max-width: 800px;
+  width: 100%;
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.difficulty-select {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.difficulty-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.difficulty-btn.easy {
+  background: #67B26F;
+  color: white;
+}
+
+.difficulty-btn.medium {
+  background: #F1C40F;
+  color: white;
+}
+
+.difficulty-btn.hard {
+  background: #E74C3C;
+  color: white;
+}
+
+.difficulty-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.scene {
+  position: relative;
+  min-height: 300px;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+}
+
+.choices {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.choice-btn {
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.choice-btn:hover {
+  transform: translateY(-2px);
+  background: #357ABD;
+}
+
+.feedback {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  display: none;
+}
+
+.feedback.positive {
+  background: #DFF0D8;
+  color: #3C763D;
+  border: 1px solid #D6E9C6;
+}
+
+.feedback.negative {
+  background: #F2DEDE;
+  color: #A94442;
+  border: 1px solid #EBCCD1;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background: #e9ecef;
+  border-radius: 10px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+
+.progress {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(45deg, var(--primary), var(--secondary));
+  transition: width 0.5s ease-in-out;
+}
+
+.emotion-meter {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.emotion-icon {
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.emotion-icon:hover {
+  transform: scale(1.2);
+}
+
+.help-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+  <h1>Aprendendo Habilidades Sociais</h1>
+  
+  <div class="difficulty-select">
+    <button class="difficulty-btn easy" onclick="setDifficulty('easy')">Fácil</button>
+    <button class="difficulty-btn medium" onclick="setDifficulty('medium')">Médio</button>
+    <button class="difficulty-btn hard" onclick="setDifficulty('hard')">Difícil</button>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress" id="progress"></div>
+  </div>
+
+  <div class="scene" id="current-scene">
+    <h2>Situação Social</h2>
+    <p id="scenario-text">Escolha um nível de dificuldade para começar...</p>
+  </div>
+
+  <div class="choices" id="choices">
+    <!-- Choices will be dynamically inserted here -->
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="emotion-meter">
+    <span class="emotion-icon" onclick="selectEmotion('😊')">😊</span>
+    <span class="emotion-icon" onclick="selectEmotion('😐')">😐</span>
+    <span class="emotion-icon" onclick="selectEmotion('😕')">😕</span>
+    <span class="emotion-icon" onclick="selectEmotion('😢')">😢</span>
+    <span class="emotion-icon" onclick="selectEmotion('😠')">😠</span>
+  </div>
+</div>
+
+<button class="help-button" onclick="showHelp()">?</button>
+
+<script>
+const scenariosByDifficulty = {
+  easy: [
+    {
+      text: "Você está em uma festa de aniversário e alguém se aproxima para conversar. O que você faz?",
+      choices: [
+        {
+          text: "Olhar para baixo e não responder",
+          feedback: "É natural sentir ansiedade, mas evitar completamente a interação não ajuda no desenvolvimento social.",
+          score: 1
+        },
+        {
+          text: "Dizer 'Oi' e sorrir",
+          feedback: "Excelente! Um cumprimento simples e um sorriso são ótimas maneiras de começar uma interação social.",
+          score: 3
+        },
+        {
+          text: "Sair correndo para outro lugar",
+          feedback: "Fugir da situação pode parecer mais fácil, mas não ajuda a desenvolver habilidades sociais.",
+          score: 1
+        },
+        {
+          text: "Fingir que está ocupado com o celular",
+          feedback: "Usar o celular como escape pode parecer seguro, mas impede oportunidades de interação social.",
+          score: 3
+        }
+      ]
+    },
+    {
+      text: "Na escola, você precisa fazer um trabalho em grupo. Como você aborda seus colegas?",
+      choices: [
+        {
+          text: "Espera que alguém te chame para um grupo",
+          feedback: "Tomar iniciativa pode ser difícil, mas é uma habilidade importante a desenvolver.",
+          score: 1
+        },
+        {
+          text: "Pergunta educadamente se pode se juntar a um grupo",
+          feedback: "Ótimo! Tomar iniciativa de forma educada é uma excelente abordagem.",
+          score: 3
+        },
+        {
+          text: "Sugere formar um grupo com colegas próximos",
+          feedback: "Excelente! Você está mostrando proatividade e habilidades de liderança.",
+          score: 3
+        },
+        {
+          text: "Fica calado esperando que alguém note você",
+          feedback: "Aguarde pode não ser a melhor abordagem. Iniciativa é importante.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você está no mercado e encontra um conhecido. Como você reage?",
+      choices: [
+        {
+          text: "Finge que não viu e muda de corredor",
+          feedback: "Embora seja tentador evitar, pequenas interações sociais são oportunidades de prática.",
+          score: 1
+        },
+        {
+          text: "Acena de longe com um sorriso",
+          feedback: "Muito bem! Um aceno amigável é uma ótima forma de reconhecer alguém sem precisar iniciar uma conversa longa.",
+          score: 3
+        },
+        {
+          text: "Diz 'oi' e pergunta como a pessoa está",
+          feedback: "Excelente! Você demonstrou cordialidade e interesse apropriado.",
+          score: 3
+        },
+        {
+          text: "Ignora a pessoa e continua fazendo compras",
+          feedback: "Interações sociais são importantes. Ignorar pode ser prejudicial.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Durante o almoço, você derruba acidentalmente seu copo de água. O que você faz?",
+      choices: [
+        {
+          text: "Fica paralisado sem saber como reagir",
+          feedback: "É natural ficar nervoso, mas é importante tomar uma ação para resolver a situação.",
+          score: 1
+        },
+        {
+          text: "Pede desculpas e procura algo para limpar",
+          feedback: "Muito bem! Assumir responsabilidade e tomar iniciativa para resolver é a atitude correta.",
+          score: 3
+        },
+        {
+          text: "Aceita ajuda de quem se oferece e agradece",
+          feedback: "Ótimo! Saber aceitar ajuda e agradecer são habilidades sociais importantes.",
+          score: 3
+        },
+        {
+          text: "Finge que não aconteceu nada",
+          feedback: "Ignorar o que aconteceu pode não ser a melhor forma de lidar com a situação.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você recebe um presente que não gostou muito. Como reagir?",
+      choices: [
+        {
+          text: "Demonstrar desapontamento claramente",
+          feedback: "É importante considerar os sentimentos de quem deu o presente, mesmo que não tenha gostado.",
+          score: 1
+        },
+        {
+          text: "Agradecer educadamente",
+          feedback: "Excelente! Mostrar gratidão é mais importante que expressar desagrado.",
+          score: 3
+        },
+        {
+          text: "Sorrir e agradecer o gesto de carinho",
+          feedback: "Perfeito! Você reconheceu a intenção positiva por trás do presente.",
+          score: 3
+        },
+        {
+          text: "Dizer que não gostou do presente",
+          feedback: "Ser honesto é importante, mas a maneira como você expressa isso deve ser cuidadosa.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "No ônibus, alguém senta ao seu lado. Como você reage?",
+      choices: [
+        {
+          text: "Vira-se para a janela e se encolhe",
+          feedback: "Embora seja natural querer seu espaço, não precisa demonstrar desconforto tão claramente.",
+          score: 1
+        },
+        {
+          text: "Continua normalmente suas atividades",
+          feedback: "Muito bem! Manter a naturalidade é apropriado nessa situação.",
+          score: 3
+        },
+        {
+          text: "Ajusta-se para dar mais espaço à pessoa",
+          feedback: "Excelente! Você demonstrou consideração pelo conforto do outro.",
+          score: 3
+        },
+        {
+          text: "Murmura algo em descontentamento",
+          feedback: "Expressar descontentamento pode criar um ambiente negativo.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você precisa pedir informações sobre um produto na loja. Como aborda o vendedor?",
+      choices: [
+        {
+          text: "Espera até que um vendedor perceba sua presença",
+          feedback: "Tomar iniciativa pode ser mais efetivo que esperar ser notado.",
+          score: 1
+        },
+        {
+          text: "Diz 'Com licença' e faz sua pergunta",
+          feedback: "Perfeito! Você foi educado e direto na sua necessidade.",
+          score: 3
+        },
+        {
+          text: "Aproxima-se do vendedor com um sorriso e pede ajuda",
+          feedback: "Excelente! Demonstrou educação e clareza na comunicação.",
+          score: 3
+        },
+        {
+          text: "Grita por ajuda do vendedor",
+          feedback: "Gritar pode ser visto como falta de respeito e não é apropriado.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Durante uma conversa, você não entendeu o que a pessoa disse. O que faz?",
+      choices: [
+        {
+          text: "Finge que entendeu e concorda",
+          feedback: "É melhor ser honesto e pedir esclarecimento do que fingir que entendeu.",
+          score: 1
+        },
+        {
+          text: "Pede educadamente para a pessoa repetir",
+          feedback: "Ótimo! É perfeitamente normal e adequado pedir para alguém repetir algo.",
+          score: 3
+        },
+        {
+          text: "Diz 'Desculpe, não entendi bem. Pode explicar de outra forma?'",
+          feedback: "Excelente! Você foi honesto e educado ao pedir clarificação.",
+          score: 3
+        },
+        {
+          text: "Ignora e muda de assunto rapidamente",
+          feedback: "Mudar de assunto sem esclarecer pode causar mal-entendidos.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você está em um restaurante e sua comida veio diferente do pedido. Como procede?",
+      choices: [
+        {
+          text: "Come mesmo assim para evitar confronto",
+          feedback: "É importante comunicar quando algo está errado, desde que feito educadamente.",
+          score: 1
+        },
+        {
+          text: "Chama o garçom educadamente e explica a situação",
+          feedback: "Muito bem! Você comunicou o problema de forma apropriada.",
+          score: 3
+        },
+        {
+          text: "Explica gentilmente que houve um erro e pede correção",
+          feedback: "Excelente! Você foi assertivo mantendo a educação.",
+          score: 3
+        },
+        {
+          text: "Levanta-se e vai embora sem dizer nada",
+          feedback: "Sair sem resolver pode ser uma oportunidade perdida de comunicação.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Alguém faz um elogio sobre sua roupa. Como você responde?",
+      choices: [
+        {
+          text: "Fica em silêncio sem saber o que dizer",
+          feedback: "Um simples 'obrigado' é sempre uma boa resposta para um elogio.",
+          score: 1
+        },
+        {
+          text: "Agradece com um sorriso",
+          feedback: "Perfeito! Um agradecimento sincero é a melhor resposta.",
+          score: 3
+        },
+        {
+          text: "Diz 'Obrigado, que gentil da sua parte'",
+          feedback: "Excelente! Você mostrou gratidão e educação.",
+          score: 3
+        },
+        {
+          text: "Desvia o assunto rapidamente",
+          feedback: "Desviar pode fazer o elogio parecer desconfortável.",
+          score: 1
+        }
+      ]
+    }
+  ],
+  medium: [
+    {
+      text: "Em uma reunião de trabalho, seus colegas estão discutindo um projeto e você percebe um erro. O que você faz?",
+      choices: [
+        {
+          text: "Interromper imediatamente para apontar o erro",
+          feedback: "Em situações profissionais, é importante considerar o momento adequado para fazer correções.",
+          score: 1
+        },
+        {
+          text: "Esperar um momento apropriado e mencionar o erro educadamente",
+          feedback: "Excelente! Você demonstrou consciência social e profissionalismo.",
+          score: 3
+        },
+        {
+          text: "Fazer uma anotação e discutir em particular depois",
+          feedback: "Ótima escolha! Isso mostra consideração pelos sentimentos dos outros e profissionalismo.",
+          score: 3
+        },
+        {
+          text: "Finge que não percebeu nada",
+          feedback: "Ignorar um erro pode permitir que o problema persista.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Durante um evento social, você percebe que está se sentindo sobrecarregado sensorialmente. Como lida com isso?",
+      choices: [
+        {
+          text: "Sai abruptamente sem avisar ninguém",
+          feedback: "Embora seja importante cuidar do seu bem-estar, comunicar sua saída pode ser mais apropriado.",
+          score: 1
+        },
+        {
+          text: "Avisa educadamente que precisa de uma pausa e se retira brevemente",
+          feedback: "Excelente! Você cuidou de suas necessidades mantendo a cortesia social.",
+          score: 3
+        },
+        {
+          text: "Procura um local mais calmo e explica sua situação se alguém perguntar",
+          feedback: "Muito bem! Você encontrou um equilíbrio entre autocuidado e interação social.",
+          score: 3
+        },
+        {
+          text: "Finge que está tudo bem e continua",
+          feedback: "Sufocar suas emoções não é uma solução saudável.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Um colega está visivelmente chateado no trabalho. Como você reage?",
+      choices: [
+        {
+          text: "Ignora para evitar envolvimento emocional",
+          feedback: "Mostrar empatia, mesmo que sutilmente, é importante para manter boas relações profissionais.",
+          score: 1
+        },
+        {
+          text: "Pergunta discretamente se está tudo bem",
+          feedback: "Ótimo! Você mostrou preocupação mantendo a discrição profissional.",
+          score: 3
+        },
+        {
+          text: "Oferece ajuda de forma gentil e respeitosa",
+          feedback: "Excelente! Demonstrou empatia e profissionalismo.",
+          score: 3
+        },
+        {
+          text: "Fica em silêncio, mas observa o colega",
+          feedback: "Apenas observar não é suficiente; é preciso agir com empatia.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Durante uma apresentação, você é interrompido várias vezes. Como procede?",
+      choices: [
+        {
+          text: "Mostra irritação e pede para não ser interrompido",
+          feedback: "É importante manter a calma e profissionalismo mesmo em situações desafiadoras.",
+          score: 1
+        },
+        {
+          text: "Continua calmamente e sugere deixar as perguntas para o final",
+          feedback: "Excelente! Você manteve o controle e redirecionou a situação positivamente.",
+          score: 3
+        },
+        {
+          text: "Adapta a apresentação para incluir momentos de interação",
+          feedback: "Ótimo! Você transformou um desafio em uma oportunidade de engajamento.",
+          score: 3
+        },
+        {
+          text: "Ignora os comentários e prossegue",
+          feedback: "Ignorar pode criar mais descontentamento entre os ouvintes.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você discorda fortemente da opinião de um colega durante uma discussão em grupo. Como reage?",
+      choices: [
+        {
+          text: "Expressa sua discordância de forma acalorada",
+          feedback: "Em ambientes profissionais, é importante manter a calma ao expressar discordâncias.",
+          score: 1
+        },
+        {
+          text: "Apresenta seu ponto de vista respeitosamente com argumentos claros",
+          feedback: "Excelente! Você manteve o profissionalismo ao expressar sua opinião.",
+          score: 3
+        },
+        {
+          text: "Reconhece o ponto de vista do colega antes de apresentar sua perspectiva",
+          feedback: "Perfeito! Você demonstrou respeito e maturidade na discussão.",
+          score: 3
+        },
+        {
+          text: "Evita o assunto e muda de tema",
+          feedback: "Mudar de assunto pode evitar conflito, mas não resolve a discordância.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Em um evento de networking, você precisa se apresentar a pessoas desconhecidas. Como aborda?",
+      choices: [
+        {
+          text: "Fica isolado observando as pessoas de longe",
+          feedback: "Networking requer algum nível de iniciativa para ser efetivo.",
+          score: 1
+        },
+        {
+          text: "Aproxima-se de pequenos grupos e espera uma oportunidade para participar",
+          feedback: "Muito bem! Você encontrou uma forma confortável de se integrar.",
+          score: 3
+        },
+        {
+          text: "Inicia conversas com uma apresentação breve e profissional",
+          feedback: "Excelente! Você mostrou iniciativa e profissionalismo.",
+          score: 3
+        },
+        {
+          text: "Fica nervoso e não aborda ninguém",
+          feedback: "A inatividade pode levar à perda de oportunidades.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você percebe que um colega está espalhando informações incorretas sobre seu trabalho. Como lida com isso?",
+      choices: [
+        {
+          text: "Confronta o colega publicamente",
+          feedback: "Conflitos profissionais devem ser tratados com discrição e diplomacia.",
+          score: 1
+        },
+        {
+          text: "Conversa em particular com o colega para entender e esclarecer",
+          feedback: "Excelente! Você escolheu uma abordagem profissional e diplomática.",
+          score: 3
+        },
+        {
+          text: "Documenta os fatos e busca orientação do supervisor se necessário",
+          feedback: "Muito bem! Você agiu de forma prudente e profissional.",
+          score: 3
+        },
+        {
+          text: "Ignora o problema e espera que se resolva sozinho",
+          feedback: "Ignorar pode levar a mais desentendimentos.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Durante um projeto em equipe, um colega não está cumprindo seus prazos. Como você aborda?",
+      choices: [
+        {
+          text: "Reclama para outros colegas sobre a situação",
+          feedback: "Falar sobre problemas com terceiros não resolve a situação e pode criar conflitos.",
+          score: 1
+        },
+        {
+          text: "Conversa privadamente com o colega para entender os motivos",
+          feedback: "Ótimo! Você mostrou preocupação e profissionalismo.",
+          score: 3
+        },
+        {
+          text: "Oferece ajuda e discute soluções possíveis",
+          feedback: "Excelente! Você demonstrou espírito de equipe e proatividade.",
+          score: 3
+        },
+        {
+          text: "Ignora o atraso e continua o trabalho",
+          feedback: "Ignorar problemas não é uma solução viável.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você precisa dar um feedback negativo para um colaborador. Como procede?",
+      choices: [
+        {
+          text: "Envia um email listando todos os problemas",
+          feedback: "Feedbacks negativos são geralmente mais efetivos quando dados pessoalmente.",
+          score: 1
+        },
+        {
+          text: "Agenda uma reunião privada e estrutura o feedback construtivamente",
+          feedback: "Excelente! Você escolheu uma abordagem profissional e construtiva.",
+          score: 3
+        },
+        {
+          text: "Começa com pontos positivos antes de abordar as áreas de melhoria",
+          feedback: "Muito bem! Você demonstrou tato e habilidade em dar feedback.",
+          score: 3
+        },
+        {
+          text: "Faz o feedback em público para todos ouvirem",
+          feedback: "Feedback público pode ser considerado embaraçoso e inapropriado.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Em uma reunião online, há muitas pessoas falando ao mesmo tempo. Como você participa?",
+      choices: [
+        {
+          text: "Fala por cima dos outros para ser ouvido",
+          feedback: "Em reuniões online, é importante manter a etiqueta e esperar sua vez.",
+          score: 1
+        },
+        {
+          text: "Usa o recurso de 'levantar a mão' e espera sua vez",
+          feedback: "Perfeito! Você seguiu a etiqueta adequada para reuniões online.",
+          score: 3
+        },
+        {
+          text: "Contribui no chat e espera o moderador dar a palavra",
+          feedback: "Excelente! Você encontrou uma forma efetiva de participar respeitosamente.",
+          score: 3
+        },
+        {
+          text: "Desiste de falar e fica em silêncio",
+          feedback: "Desistir pode levar a perda de oportunidades de contribuição.",
+          score: 1
+        }
+      ]
+    }
+  ],
+  hard: [
+    {
+      text: "Você está em uma situação de conflito onde duas pessoas discordam fortemente. Ambas pedem sua opinião. O que você faz?",
+      choices: [
+        {
+          text: "Tomar partido de quem você acha que está certo imediatamente",
+          feedback: "Em conflitos complexos, tomar partido rapidamente pode agravar a situação.",
+          score: 1
+        },
+        {
+          text: "Sugerir que todos se acalmem e discutam o problema objetivamente",
+          feedback: "Excelente! Você demonstrou habilidades de mediação e maturidade emocional.",
+          score: 3
+        },
+        {
+          text: "Ouvir ambos os lados e ajudar a encontrar um meio termo",
+          feedback: "Perfeito! Essa abordagem demonstra empatia e habilidades de resolução de conflitos.",
+          score: 3
+        },
+        {
+          text: "Ignorar o conflito e mudar de assunto",
+          feedback: "Ignorar pode piorar a situação e não resolve o conflito.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Em uma reunião importante, você percebe que seu supervisor cometeu um erro significativo. Como procede?",
+      choices: [
+        {
+          text: "Aponta o erro na frente de todos imediatamente",
+          feedback: "É importante considerar a hierarquia e o momento apropriado para correções.",
+          score: 1
+        },
+        {
+          text: "Espera um momento privado para discutir o assunto",
+          feedback: "Excelente! Você mostrou respeito pela hierarquia e tato profissional.",
+          score: 3
+        },
+        {
+          text: "Envia um email diplomático com dados que mostram a correção necessária",
+          feedback: "Muito bem! Você encontrou uma forma profissional de abordar o problema.",
+          score: 3
+        },
+        {
+          text: "Finge que não percebeu o erro",
+          feedback: "Ignorar um erro pode permitir que o problema persista.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Durante uma apresentação importante, você percebe que parte de seus dados está incorreta. Como lida com isso?",
+      choices: [
+        {
+          text: "Continua a apresentação ignorando o erro",
+          feedback: "Transparência é importante, mesmo em situações desconfortáveis.",
+          score: 1
+        },
+        {
+          text: "Reconhece o erro e promete enviar os dados corretos depois",
+          feedback: "Excelente! Você demonstrou honestidade e profissionalismo.",
+          score: 3
+        },
+        {
+          text: "Adapta a apresentação para focar nos dados que tem certeza",
+          feedback: "Ótimo! Você encontrou uma solução criativa para o problema.",
+          score: 3
+        },
+        {
+          text: "Desiste da apresentação por vergonha do erro",
+          feedback: "Desistir pode ser uma oportunidade perdida de aprendizado.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você descobre que um colega está tendo problemas pessoais que afetam seu trabalho. Como ajuda?",
+      choices: [
+        {
+          text: "Comenta a situação com outros colegas",
+          feedback: "É importante manter a confidencialidade em assuntos pessoais.",
+          score: 1
+        },
+        {
+          text: "Oferece apoio discretamente e sugere recursos disponíveis",
+          feedback: "Excelente! Você mostrou empatia mantendo o profissionalismo.",
+          score: 3
+        },
+        {
+          text: "Conversa em privado e oferece ajuda prática se possível",
+          feedback: "Muito bem! Você demonstrou compaixão e discrição.",
+          score: 3
+        },
+        {
+          text: "Ignora a situação e continua com seu trabalho",
+          feedback: "Ignorar pode fazer seu colega se sentir mais isolado.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Em uma negociação importante, a outra parte faz uma proposta que você considera inadequada. Como responde?",
+      choices: [
+        {
+          text: "Rejeita imediatamente de forma enfática",
+          feedback: "Em negociações, é importante manter um tom construtivo mesmo ao discordar.",
+          score: 1
+        },
+        {
+          text: "Pede mais detalhes e explica suas preocupações",
+          feedback: "Excelente! Você manteve o diálogo aberto e profissional.",
+          score: 3
+        },
+        {
+          text: "Apresenta uma contraproposta bem fundamentada",
+          feedback: "Muito bem! Você demonstrou habilidades de negociação maduras.",
+          score: 3
+        },
+        {
+          text: "Desiste de negociar e aceita qualquer coisa",
+          feedback: "Desistir pode levar a resultados não satisfatórios.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você precisa liderar uma equipe onde há conflitos internos anteriores. Como procede?",
+      choices: [
+        {
+          text: "Ignora os conflitos e foca apenas nas tarefas",
+          feedback: "Conflitos não resolvidos podem afetar o desempenho da equipe.",
+          score: 1
+        },
+        {
+          text: "Conversa individualmente com cada membro para entender as perspectivas",
+          feedback: "Excelente! Você mostrou liderança e habilidade de gestão de conflitos.",
+          score: 3
+        },
+        {
+          text: "Organiza uma reunião para alinhar expectativas e estabelecer regras",
+          feedback: "Ótimo! Você tomou iniciativa para criar um ambiente de trabalho melhor.",
+          score: 3
+        },
+        {
+          text: "Finge que tudo está bem e não aborda o assunto",
+          feedback: "Ignorar problemas pode criar um ambiente tóxico.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Durante uma apresentação pública, alguém na plateia faz comentários hostis. Como você reage?",
+      choices: [
+        {
+          text: "Responde com hostilidade similar",
+          feedback: "Manter a compostura é crucial em situações públicas desafiadoras.",
+          score: 1
+        },
+        {
+          text: "Mantém a calma e responde profissionalmente",
+          feedback: "Excelente! Você demonstrou maturidade e profissionalismo sob pressão.",
+          score: 3
+        },
+        {
+          text: "Convida a pessoa a discutir o assunto depois construtivamente",
+          feedback: "Muito bem! Você transformou um confronto em uma oportunidade de diálogo.",
+          score: 3
+        },
+        {
+          text: "Ignora o comentário e continua",
+          feedback: "Ignorar pode parecer que você está fugindo da situação.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você percebe que um projeto importante está atrasado devido a falhas de comunicação. Como resolve?",
+      choices: [
+        {
+          text: "Envia um email culpando os responsáveis",
+          feedback: "Apontar culpados raramente resolve problemas de comunicação.",
+          score: 1
+        },
+        {
+          text: "Organiza uma reunião de alinhamento com todas as partes",
+          feedback: "Excelente! Você buscou uma solução colaborativa.",
+          score: 3
+        },
+        {
+          text: "Propõe um novo sistema de comunicação para evitar problemas futuros",
+          feedback: "Ótimo! Você focou em soluções construtivas e prevenção.",
+          score: 3
+        },
+        {
+          text: "Ignora a situação e espera que se resolva",
+          feedback: "Esperar pode levar a mais atrasos e confusão.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Em uma situação de crise, você precisa dar más notícias a uma equipe. Como comunica?",
+      choices: [
+        {
+          text: "Envia um email em massa com todas as informações",
+          feedback: "Notícias difíceis merecem uma abordagem mais pessoal.",
+          score: 1
+        },
+        {
+          text: "Reúne a equipe e comunica com transparência e empatia",
+          feedback: "Excelente! Você demonstrou liderança e sensibilidade.",
+          score: 3
+        },
+        {
+          text: "Prepara um plano de ação antes de comunicar as notícias",
+          feedback: "Muito bem! Você combinou pragmatismo com consideração.",
+          score: 3
+        },
+        {
+          text: "Finge que nada aconteceu",
+          feedback: "Ignorar a situação pode causar mais confusão e frustração.",
+          score: 1
+        }
+      ]
+    },
+    {
+      text: "Você descobre um erro ético cometido por um colega próximo. Como procede?",
+      choices: [
+        {
+          text: "Ignora para proteger o colega",
+          feedback: "Questões éticas precisam ser tratadas adequadamente, mesmo sendo difíceis.",
+          score: 1
+        },
+        {
+          text: "Conversa primeiro com o colega para entender a situação",
+          feedback: "Bom! Você deu chance para explicação antes de tomar outras medidas.",
+          score: 3
+        },
+        {
+          text: "Reporta pelos canais apropriados mantendo discrição",
+          feedback: "Excelente! Você agiu com integridade e profissionalismo.",
+          score: 3
+        },
+        {
+          text: "Finge que não viu nada",
+          feedback: "Ignorar erros éticos pode causar mais problemas no futuro.",
+          score: 1
+        }
+      ]
+    }
+  ]
+};
+
+let currentDifficulty = null;
+let currentScenario = 0;
+let totalScore = 0;
+let scenarios = [];
+
+function setDifficulty(difficulty) {
+  currentDifficulty = difficulty;
+  scenarios = scenariosByDifficulty[difficulty];
+  currentScenario = 0;
+  totalScore = 0;
+  loadScenario(0);
+  updateProgress();
+}
+
+function loadScenario(index) {
+  if (!currentDifficulty) {
+    document.getElementById('scenario-text').textContent = "Escolha um nível de dificuldade para começar...";
+    document.getElementById('choices').innerHTML = '';
+    return;
+  }
+
+  const scenario = scenarios[index];
+  document.getElementById('scenario-text').textContent = scenario.text;
+  
+  const choicesContainer = document.getElementById('choices');
+  choicesContainer.innerHTML = '';
+  
+  scenario.choices.forEach((choice, i) => {
+    const button = document.createElement('button');
+    button.className = 'choice-btn';
+    button.textContent = choice.text;
+    button.onclick = () => makeChoice(i);
+    choicesContainer.appendChild(button);
+  });
+}
+
+function makeChoice(choiceIndex) {
+  const scenario = scenarios[currentScenario];
+  const choice = scenario.choices[choiceIndex];
+  
+  const feedback = document.getElementById('feedback');
+  feedback.textContent = choice.feedback;
+  feedback.className = 'feedback ' + (choice.score === 3 ? 'positive' : 'negative');
+  feedback.style.display = 'block';
+  
+  totalScore += choice.score;
+  updateProgress();
+  
+  setTimeout(() => {
+    if (currentScenario < scenarios.length - 1) {
+      currentScenario++;
+      loadScenario(currentScenario);
+      feedback.style.display = 'none';
+    } else {
+      endGame();
+    }
+  }, 3000);
+}
+
+function updateProgress() {
+  if (!currentDifficulty) return;
+  const maxScore = scenarios.length * 3;
+  const progress = (totalScore / maxScore) * 100;
+  document.getElementById('progress').style.width = `${progress}%`;
+}
+
+function selectEmotion(emotion) {
+  alert(`Você está se sentindo ${emotion}. É importante reconhecer nossos sentimentos!`);
+}
+
+function showHelp() {
+  alert("Este é um jogo para praticar habilidades sociais! Escolha um nível de dificuldade e responda às situações. Nível Fácil tem situações mais simples do dia a dia, Médio apresenta situações mais complexas, e Difícil traz desafios mais elaborados de interação social.");
+}
+
+function endGame() {
+  const maxScore = scenarios.length * 3;
+  const percentage = (totalScore / maxScore) * 100;
+  
+  document.getElementById('current-scene').innerHTML = `
+    <h2>Parabéns!</h2>
+    <p>Você completou o nível ${currentDifficulty} com ${percentage}% de aproveitamento.</p>
+    <p>Lembre-se: cada interação social é uma oportunidade de aprendizado.</p>
+    <button class="choice-btn" onclick="resetGame()">Escolher Outro Nível</button>
+  `;
+  document.getElementById('choices').innerHTML = '';
+}
+
+function resetGame() {
+  currentDifficulty = null;
+  currentScenario = 0;
+  totalScore = 0;
+  loadScenario(0);
+  updateProgress();
+}
+
+// Start the game
+loadScenario(0);
+</script>
+</body></html>
